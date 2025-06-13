@@ -9,24 +9,25 @@ import cx from 'classnames';
 import { useCombobox, UseComboboxProps, UseComboboxActions } from 'downshift';
 import PropTypes from 'prop-types';
 import React, {
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-  useMemo,
+  cloneElement,
   forwardRef,
   useCallback,
-  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
   type ComponentType,
+  type FocusEvent,
   type ForwardedRef,
-  type ReactElement,
-  type RefAttributes,
+  type InputHTMLAttributes,
+  type KeyboardEvent,
+  type MouseEvent,
   type PropsWithChildren,
   type PropsWithRef,
-  type InputHTMLAttributes,
-  type MouseEvent,
-  type KeyboardEvent,
-  type FocusEvent,
+  type ReactElement,
+  type ReactNode,
+  type RefAttributes,
 } from 'react';
 import { Text } from '../Text';
 import {
@@ -35,10 +36,7 @@ import {
   WarningFilled,
 } from '@carbon/icons-react';
 import isEqual from 'react-fast-compare';
-import ListBox, {
-  PropTypes as ListBoxPropTypes,
-  ListBoxSize,
-} from '../ListBox';
+import ListBox, { ListBoxSizePropType, type ListBoxSize } from '../ListBox';
 import { ListBoxTrigger, ListBoxSelection } from '../ListBox/next';
 import { match, keys } from '../../internal/keyboard';
 import { useId } from '../../internal/useId';
@@ -49,6 +47,8 @@ import { FormContext } from '../FluidForm';
 import { autoUpdate, flip, hide, useFloating } from '@floating-ui/react';
 import { TranslateWithId } from '../../types/common';
 import { useFeatureFlag } from '../FeatureFlags';
+import { AILabel } from '../AILabel';
+import { isComponentElement } from '../../internal';
 
 const {
   InputBlur,
@@ -767,20 +767,11 @@ const ComboBox = forwardRef(
     const ItemToElement = itemToElement;
 
     // AILabel always size `mini`
-    let normalizedDecorator = React.isValidElement(slug ?? decorator)
-      ? (slug ?? decorator)
+    const candidate = slug ?? decorator;
+    const candidateIsAILabel = isComponentElement(candidate, AILabel);
+    const normalizedDecorator = candidateIsAILabel
+      ? cloneElement(candidate, { size: 'mini' })
       : null;
-    if (
-      normalizedDecorator &&
-      normalizedDecorator['type']?.displayName === 'AILabel'
-    ) {
-      normalizedDecorator = React.cloneElement(
-        normalizedDecorator as React.ReactElement<any>,
-        {
-          size: 'mini',
-        }
-      );
-    }
 
     const {
       // Prop getters
@@ -1390,7 +1381,7 @@ ComboBox.propTypes = {
   /**
    * Specify the size of the ListBox. Currently supports either `sm`, `md` or `lg` as an option.
    */
-  size: ListBoxPropTypes.ListBoxSize,
+  size: ListBoxSizePropType,
 
   slug: deprecate(
     PropTypes.node,
